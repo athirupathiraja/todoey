@@ -11,30 +11,17 @@ import UIKit
 class ToDoListVC: UITableViewController {
     
     var itemArray = [item]()
-    
-    let defaults = UserDefaults.standard
+  
+    let dataFilePath = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first?.appendingPathComponent("items.plist")
+
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        let newItem = item()
-        newItem.title = "go shopping"
-        itemArray.append(newItem)
         
-        let newItem2 = item()
-        newItem2.title = "go eat dinner"
-        itemArray.append(newItem2)
+        print (dataFilePath)
         
-        let newItem3 = item()
-        newItem3.title = "go eat lunch"
-        itemArray.append(newItem3)
-        
-        
-        
-        
-        if let items = defaults.array(forKey: "ToDoListArray") as? [item] {
-            itemArray = items
-        }
-    
+        loadItems()
+    }
     
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -60,9 +47,7 @@ class ToDoListVC: UITableViewController {
         
         itemArray[indexPath.row].done = !itemArray[indexPath.row].done
         
-        
-      
-        tableView.reloadData()
+        saveData()
         
         tableView.deselectRow(at: indexPath, animated: true)
     }
@@ -71,6 +56,7 @@ class ToDoListVC: UITableViewController {
     @IBAction func addButtonPressed(_ sender: UIBarButtonItem) {
         
         var textField = UITextField()
+        
         let alert = UIAlertController(title: "Add New Item", message: "", preferredStyle: .alert)
         
         let action = UIAlertAction(title: "Add Item", style: .default) { (action) in
@@ -80,9 +66,7 @@ class ToDoListVC: UITableViewController {
             
             self.itemArray.append(newItem)
             
-           self.defaults.set(self.itemArray, forKey: "ToDoListArray")
-            
-            self.tableView.reloadData()
+           self.saveData()
         }
             
             alert.addTextField { (alertTextField) in
@@ -98,7 +82,30 @@ class ToDoListVC: UITableViewController {
         
     }
     
+    func saveData() {
+        let encoder = PropertyListEncoder()
+        
+        do {
+            let data = try encoder.encode(itemArray)
+            try data.write(to: dataFilePath!)
+        } catch {
+            print(error)
+        }
+        
+        self.tableView.reloadData()
+    }
 
-
+    func loadItems() {
+        if let data = try? Data(contentsOf: dataFilePath!) {
+            let decoder = PropertyListDecoder()
+            do {
+                itemArray = try decoder.decode([item].self, from: data)
+            } catch {
+                print(error)
+            }
+        }
+    }
+    
+    
 }
 
